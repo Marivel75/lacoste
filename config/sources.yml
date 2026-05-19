@@ -1,0 +1,73 @@
+sources:
+  # --- DPE ---
+  - name: "Google News - DPE"
+    type: rss
+    url: "https://news.google.com/rss/search?q=DPE+logement+%C3%A9nerg%C3%A9tique&hl=fr&gl=FR&ceid=FR:fr"
+    category: "DPE"
+
+  # --- Presse spécialisée ---
+  - name: "Batiactu"
+    type: rss
+    url: "https://www.batiactu.com/rss/batiactu.rss"
+    category: "Presse spécialisée"
+
+  - name: "Google News - Le Moniteur"
+    type: rss
+    url: "https://news.google.com/rss/search?q=site%3Alemoniteur.fr+r%C3%A9novation+%C3%A9nerg%C3%A9tique&hl=fr&gl=FR&ceid=FR:fr"
+    category: "Presse spécialisée"
+
+  # --- Généraliste ---
+  - name: "Google News - Rénovation énergétique"
+    type: rss
+    url: "https://news.google.com/rss/search?q=r%C3%A9novation+%C3%A9nerg%C3%A9tique&hl=fr&gl=FR&ceid=FR:fr"
+    category: "Généraliste"
+
+  - name: "Google News - MaPrimeRénov"
+    type: rss
+    url: "https://news.google.com/rss/search?q=MaPrimeR%C3%A9nov&hl=fr&gl=FR&ceid=FR:fr"
+    category: "Généraliste"
+
+  - name: "Google News - Passoire thermique"
+    type: rss
+    url: "https://news.google.com/rss/search?q=passoire+thermique+logement&hl=fr&gl=FR&ceid=FR:fr"
+    category: "Généraliste"
+
+  # --- Acteurs / Écosystème ---
+  - name: "Watt Watchers"
+    type: rss
+    url: "https://news.google.com/rss/search?q=site%3Awattwatchers.fr&hl=fr&gl=FR&ceid=FR:fr"
+    category: "Acteur/Écosystème"
+
+  # --- ADEME ---
+  - name: "ADEME Infos"
+    type: rss
+    url: "https://infos.ademe.fr/feed/"
+    category: "Institution"
+
+  # --- Institutions (pas de RSS natif → Google News ciblé) ---
+  - name: "Google News - France Rénov"
+    type: rss
+    url: "https://news.google.com/rss/search?q=site%3Afrance-renov.gouv.fr&hl=fr&gl=FR&ceid=FR:fr"
+    category: "Institution"
+
+  - name: "Google News - ANAH"
+    type: rss
+    url: "https://news.google.com/rss/search?q=site%3Aanah.gouv.fr&hl=fr&gl=FR&ceid=FR:fr"
+    category: "Institution"
+
+  # --- Ministère ---
+  - name: "Ministère Écologie - Actualités"
+    type: rss
+    url: "https://ecologie.gouv.fr/rss-actualites.xml"
+    category: "Réglementation"
+
+  - name: "Ministère Écologie - Presse"
+    type: rss
+    url: "https://ecologie.gouv.fr/rss-presse.xml"
+    category: "Réglementation"
+
+  # --- Études / Rapports ---
+  - name: "Google News - Études rénovation"
+    type: rss
+    url: "https://news.google.com/rss/search?q=%C3%A9tude+rapport+r%C3%A9novation+%C3%A9nerg%C3%A9tique+DPE&hl=fr&gl=FR&ceid=FR:fr"
+    category: "Étude/Rapport"

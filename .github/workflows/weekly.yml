@@ -1,0 +1,38 @@
+name: Veille hebdomadaire
+
+on:
+  schedule:
+    # Tous les lundis à 7h00 UTC (9h Paris en été, 8h en hiver)
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Nombre de jours en arrière"
+        required: false
+        default: "7"
+      min_score:
+        description: "Score minimum"
+        required: false
+        default: "1"
+
+jobs:
+  run-veille:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - name: Lancer la veille
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+          LOOKBACK_DAYS: ${{ inputs.days || '7' }}
+          MIN_SCORE: ${{ inputs.min_score || '1' }}
+        run: python -m src.main --days ${{ inputs.days || 7 }} --min-score ${{ inputs.min_score || 1 }}
