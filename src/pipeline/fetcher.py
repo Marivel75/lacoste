@@ -5,12 +5,13 @@ et retourne une liste d'Article (dataclass pipeline). Déduplique les URLs
 au sein d'un même appel à fetch_all.
 """
 
+import html
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
 import feedparser
-from bs4 import BeautifulSoup
 from dateutil import parser as dateparser
 
 from src.pipeline.models import Article
@@ -72,9 +73,8 @@ class SourceFetcher:
         link = entry.get("link", "").strip()
         if not title or not link:
             return None
-        summary = BeautifulSoup(
-            entry.get("summary", entry.get("description", "")), "html.parser"
-        ).get_text(" ", strip=True)[:500]
+        raw = entry.get("summary", entry.get("description", ""))
+        summary = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html.unescape(raw))).strip()[:500]
         published = self._parse_date(
             entry.get("published") or entry.get("updated")
             or entry.get("published_parsed") or entry.get("updated_parsed")
