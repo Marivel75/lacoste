@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.fetcher import SourceFetcher
+from src.pipeline.fetcher import SourceFetcher
 
 
 @pytest.fixture

@@ -1,9 +1,15 @@
+"""Chargement de la configuration de l'application.
+
+Lit les variables d'environnement (.env) et les fichiers YAML (keywords.yml,
+sources.yml). Expose un dataclass Config utilisé par le pipeline et le CLI.
+"""
+
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
+
 import yaml
 from dotenv import load_dotenv
-import os
-
 
 ROOT = Path(__file__).resolve().parent.parent
 

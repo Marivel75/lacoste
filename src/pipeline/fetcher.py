@@ -1,11 +1,19 @@
+"""Récupération des flux RSS.
+
+Parse chaque source configurée via feedparser, nettoie le HTML des résumés
+et retourne une liste d'Article (dataclass pipeline). Déduplique les URLs
+au sein d'un même appel à fetch_all.
+"""
+
 import logging
-import feedparser
-from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from typing import Optional
+
+import feedparser
+from bs4 import BeautifulSoup
 from dateutil import parser as dateparser
 
-from .models import Article
+from src.pipeline.models import Article
 
 logger = logging.getLogger(__name__)
 

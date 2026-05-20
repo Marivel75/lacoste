@@ -1,8 +1,16 @@
-import re
-import logging
-from datetime import datetime, timezone, timedelta
+"""Filtrage et scoring des articles par mots-clés.
 
-from .models import Article
+Attribue un score à chaque article selon les mots-clés détectés :
+- mot-clé présent dans le titre  → 2 points
+- mot-clé présent dans le résumé uniquement → 1 point
+Filtre les articles trop anciens (lookback_days) et ceux sous le score minimum.
+"""
+
+import logging
+import re
+from datetime import datetime, timedelta, timezone
+
+from src.pipeline.models import Article
 
 logger = logging.getLogger(__name__)
 

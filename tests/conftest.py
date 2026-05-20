@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from src.models import Article
+from src.pipeline.models import Article
 
 
 def make_article(

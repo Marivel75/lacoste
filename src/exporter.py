@@ -1,3 +1,10 @@
+"""Export CSV des articles filtrés (héritage du pipeline v1).
+
+Conservé pour compatibilité et backup local. Dans la nouvelle architecture,
+la persistance principale se fait en base via article_service. L'export CSV
+reste disponible comme sortie optionnelle du pipeline.
+"""
+
 import csv
 import logging
 from datetime import datetime, timezone

@@ -1,3 +1,10 @@
+"""Modèles de données internes au pipeline (dataclasses).
+
+Article est le DTO (Data Transfer Object) utilisé tout au long du pipeline :
+fetch → filter → nlp → export. Distinct des modèles SQLAlchemy de src/models/
+qui représentent la persistance en base.
+"""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional

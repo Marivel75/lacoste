@@ -1,3 +1,10 @@
+"""Génération et envoi de la newsletter par email (SMTP Gmail).
+
+Construit le HTML de la newsletter (articles groupés par catégorie, nuage de mots)
+et l'envoie via SMTP SSL. Sera migré vers src/services/newsletter_service.py
+lors de l'implémentation de la carte [Lacoste] Service newsletter.
+"""
+
 import logging
 import smtplib
 import ssl
@@ -5,8 +12,9 @@ from datetime import datetime, timedelta, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-from .models import Article
-from .nlp import topic_badges_html, sentiment_badge_html
+from src.pipeline.models import Article
+
+from .nlp import sentiment_badge_html, topic_badges_html
 
 logger = logging.getLogger(__name__)
 

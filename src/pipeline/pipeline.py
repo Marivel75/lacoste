@@ -1,13 +1,19 @@
+"""Orchestrateur du pipeline de veille.
+
+Enchaîne : collecte RSS → filtrage par mots-clés → analyse NLP → export CSV + email.
+Point d'entrée : VeillePipeline(config).run().
+"""
+
+import json
 import logging
 from pathlib import Path
 
-from .config import Config
-from .fetcher import SourceFetcher
-from .filter import KeywordFilter
-from .exporter import CSVExporter
-from .mailer import Mailer
-import json
-from .nlp import analyse_article, count_term_frequencies
+from src.config import Config
+from src.exporter import CSVExporter
+from src.mailer import Mailer
+from src.pipeline.fetcher import SourceFetcher
+from src.pipeline.filter import KeywordFilter
+from src.pipeline.nlp import analyse_article, count_term_frequencies
 
 logger = logging.getLogger(__name__)
 
