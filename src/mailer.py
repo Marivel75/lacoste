@@ -13,8 +13,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from src.pipeline.models import Article
-
-from .nlp import sentiment_badge_html, topic_badges_html
+from src.pipeline.nlp import sentiment_badge_html, topic_badges_html
 
 logger = logging.getLogger(__name__)
 
