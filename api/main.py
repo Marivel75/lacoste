@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.routers import articles, newsletter, pipeline, weeks
 from src.db.init_db import init_db
 
 
@@ -33,6 +34,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(articles.router)
+app.include_router(weeks.router)
+app.include_router(pipeline.router)
+app.include_router(newsletter.router)
 
 
 @app.get("/health", tags=["health"])

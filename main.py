@@ -30,10 +30,22 @@ def cmd_collect(args) -> None:
 
 
 def cmd_newsletter(args) -> None:
-    # Stub — sera implémenté dans la carte [Lacoste] Service newsletter
-    logging.getLogger(__name__).info(
-        "Newsletter %s — non encore implémenté", args.week or "semaine courante"
-    )
+    from src.services.newsletter_service import send_newsletter
+
+    result = send_newsletter(args.week, extra_recipients=args.extra_recipients or None)
+    log = logging.getLogger(__name__)
+    if result["sent"]:
+        log.info(
+            "Newsletter %s envoyée à : %s — %d articles.",
+            result["week"], ", ".join(result["recipients"]), result["articles_sent"],
+        )
+    elif result["articles_sent"] == 0:
+        log.warning("Newsletter %s — aucun article en base.", result["week"])
+    else:
+        log.warning(
+            "Newsletter %s — %d articles trouvés mais email non configuré.",
+            result["week"], result["articles_sent"],
+        )
 
 
 def cmd_initdb(_args) -> None:
@@ -55,6 +67,10 @@ def main() -> None:
 
     p_nl = sub.add_parser("newsletter", help="Envoyer la newsletter")
     p_nl.add_argument("--week", type=str, default=None, help="Ex : 2026-W20")
+    p_nl.add_argument(
+        "extra_recipients", nargs="*", metavar="EMAIL",
+        help="Destinataires supplémentaires (s'ajoutent à EMAIL_RECIPIENTS du .env)",
+    )
     p_nl.set_defaults(func=cmd_newsletter)
 
     p_db = sub.add_parser("initdb", help="Créer les tables en base")

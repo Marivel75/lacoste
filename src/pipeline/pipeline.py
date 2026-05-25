@@ -9,6 +9,7 @@ import json
 import logging
 
 from src.config import Config
+from src.db.init_db import init_db
 from src.db.session import SessionLocal
 from src.mailer import Mailer
 from src.pipeline.fetcher import SourceFetcher
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 class VeillePipeline:
 
     def __init__(self, config: Config):
+        init_db()
         self.config = config
         self.fetcher = SourceFetcher()
         self.filter = KeywordFilter(config.keywords)
