@@ -63,7 +63,7 @@ api:
 	$(RUN) uvicorn api.main:app --reload --port 8000
 
 streamlit:
-	$(RUN) streamlit run frontend/app.py
+	PYTHONPATH=$(PROJECT_DIR) $(RUN) streamlit run frontend/app.py
 
 # ── Cron ───────────────────────────────────────────────────────────────────────
 
