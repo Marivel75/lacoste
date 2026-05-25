@@ -9,14 +9,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from api.dependencies import get_db
 # Importe tous les modèles AVANT create_all pour qu'ils soient enregistrés dans Base.metadata
 import src.models  # noqa: F401 — enregistre Article, CollectionRun, NewsletterLog, NewsletterPick
+from api.dependencies import get_db
+from api.main import app
 from src.models.article import Article
 from src.models.base import Base
 from src.models.collection_run import CollectionRun
 from src.models.newsletter_log import NewsletterLog
-from api.main import app
 
 # ── DB de test en mémoire ──────────────────────────────────────────────────────
 # StaticPool : connexion unique partagée — l'état en mémoire persiste entre sessions.

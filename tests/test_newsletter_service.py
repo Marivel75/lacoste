@@ -1,7 +1,5 @@
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, call, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from src.models.article import Article as ArticleModel
 from src.services.newsletter_service import get_articles_for_week, send_newsletter
