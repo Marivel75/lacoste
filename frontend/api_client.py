@@ -2,7 +2,6 @@
 
 Toutes les pages Streamlit passent exclusivement par ce module pour accéder
 aux données — aucun accès direct à la base de données depuis le frontend.
-Utilise httpx avec l'URL de base définie dans frontend/config.py.
 """
 
 import httpx
@@ -10,52 +9,68 @@ import httpx
 from frontend.config import API_BASE_URL
 
 
-def _get(path: str, params: dict | None = None) -> dict:
-    with httpx.Client(base_url=API_BASE_URL, timeout=30) as client:
-        response = client.get(path, params=params)
-        response.raise_for_status()
-        return response.json()
+class APIError(Exception):
+    pass
+
+
+def _get(path: str, params: dict | None = None):
+    try:
+        with httpx.Client(base_url=API_BASE_URL, timeout=30) as client:
+            r = client.get(path, params={k: v for k, v in (params or {}).items() if v is not None})
+            r.raise_for_status()
+            return r.json()
+    except httpx.ConnectError:
+        raise APIError("API non accessible — lancez `make api` dans un autre terminal.")
+    except httpx.HTTPStatusError as exc:
+        raise APIError(f"Erreur API {exc.response.status_code} : {exc.response.text}")
+
+
+def _post(path: str, body: dict | None = None):
+    try:
+        with httpx.Client(base_url=API_BASE_URL, timeout=120) as client:
+            r = client.post(path, json=body or {})
+            r.raise_for_status()
+            return r.json()
+    except httpx.ConnectError:
+        raise APIError("API non accessible — lancez `make api` dans un autre terminal.")
+    except httpx.HTTPStatusError as exc:
+        raise APIError(f"Erreur API {exc.response.status_code} : {exc.response.text}")
 
 
 def health() -> dict:
     return _get("/health")
 
 
-def get_weeks() -> list[str]:
-    return _get("/weeks")
+def get_weeks() -> list[dict]:
+    return _get("/weeks/")
 
 
-def get_articles(week: str | None = None, **filters) -> dict:
-    params = {"week": week, **filters} if week else filters
-    return _get("/articles", params=params)
+def get_articles(
+    week: str | None = None,
+    source: str | None = None,
+    category: str | None = None,
+    min_score: int = 0,
+    limit: int = 200,
+) -> list[dict]:
+    return _get("/articles/", params={
+        "week": week,
+        "source": source,
+        "category": category,
+        "min_score": min_score if min_score > 0 else None,
+        "limit": limit,
+    })
 
 
-def get_nlp_topics(week: str) -> dict:
-    return _get("/nlp/topics", params={"week": week})
+def trigger_collect(days: int = 7, min_score: int = 1) -> dict:
+    return _post("/pipeline/collect", {"days": days, "min_score": min_score})
 
 
-def get_nlp_sentiment(week: str) -> dict:
-    return _get("/nlp/sentiment", params={"week": week})
+def send_newsletter(week: str | None = None, extra_recipients: list[str] | None = None) -> dict:
+    return _post("/newsletter/send", {
+        "week": week,
+        "extra_recipients": extra_recipients or [],
+    })
 
 
-def get_nlp_wordfreq(week: str, topic: str | None = None) -> dict:
-    path = f"/nlp/wordfreq/{topic}" if topic else "/nlp/wordfreq"
-    return _get(path, params={"week": week})
-
-
-def get_nlp_timeline(weeks: int = 8) -> dict:
-    return _get("/nlp/timeline", params={"weeks": weeks})
-
-
-def get_newsletter_preview(week: str) -> str:
-    return _get("/newsletter/preview", params={"week": week})
-
-
-def send_newsletter(week: str, recipients: list[str] | None = None) -> dict:
-    with httpx.Client(base_url=API_BASE_URL, timeout=30) as client:
-        body = {"week": week}
-        if recipients:
-            body["recipients"] = recipients
-        response = client.post("/newsletter/send", json=body)
-        response.raise_for_status()
-        return response.json()
+def get_newsletter_logs() -> list[dict]:
+    return _get("/newsletter/logs")
