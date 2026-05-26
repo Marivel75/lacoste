@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 class NewsletterSendRequest(BaseModel):
     week: str | None = None
     extra_recipients: list[str] = []
+    limit: int | None = None
 
 
 class NewsletterSendResult(BaseModel):
@@ -21,6 +22,7 @@ class NewsletterLogOut(BaseModel):
     sent_at: datetime
     recipients: list[str]
     articles_count: int
+    article_ids: list[int] = []
     status: str
     error_message: str | None
 

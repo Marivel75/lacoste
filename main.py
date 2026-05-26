@@ -32,7 +32,12 @@ def cmd_collect(args) -> None:
 def cmd_newsletter(args) -> None:
     from src.services.newsletter_service import send_newsletter
 
-    result = send_newsletter(args.week, extra_recipients=args.extra_recipients or None)
+    result = send_newsletter(
+        args.week,
+        extra_recipients=args.extra_recipients or None,
+        limit=args.limit,
+        prod=args.prod,
+    )
     log = logging.getLogger(__name__)
     if result["sent"]:
         log.info(
@@ -66,10 +71,14 @@ def main() -> None:
     p_collect.set_defaults(func=cmd_collect)
 
     p_nl = sub.add_parser("newsletter", help="Envoyer la newsletter")
-    p_nl.add_argument("--week", type=str, default=None, help="Ex : 2026-W20")
+    p_nl.add_argument("--week", type=str, default=None, help="Ex : 2026-W20 (mode hebdo)")
+    p_nl.add_argument("--limit", type=int, default=None,
+                      help="Mode quotidien : N articles les plus pertinents jamais envoyés")
+    p_nl.add_argument("--prod", action="store_true",
+                      help="Utiliser NEWSLETTER_RECIPIENTS au lieu de EMAIL_RECIPIENTS")
     p_nl.add_argument(
         "extra_recipients", nargs="*", metavar="EMAIL",
-        help="Destinataires supplémentaires (s'ajoutent à EMAIL_RECIPIENTS du .env)",
+        help="Destinataires supplémentaires (s'ajoutent à la liste de base)",
     )
     p_nl.set_defaults(func=cmd_newsletter)
 
