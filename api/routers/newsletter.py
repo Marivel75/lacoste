@@ -12,7 +12,7 @@ router = APIRouter(prefix="/newsletter", tags=["newsletter"])
 @router.post("/send", response_model=NewsletterSendResult)
 def send(req: NewsletterSendRequest = NewsletterSendRequest()):
     try:
-        result = send_newsletter(req.week, extra_recipients=req.extra_recipients or None)
+        result = send_newsletter(req.week, extra_recipients=req.extra_recipients or None, limit=req.limit)
         return NewsletterSendResult(**result)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc

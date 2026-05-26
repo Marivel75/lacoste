@@ -24,6 +24,7 @@ class Config:
     email_sender: str = ""
     email_password: str = ""
     email_recipients: list[str] = field(default_factory=list)
+    newsletter_recipients: list[str] = field(default_factory=list)
 
     @property
     def email_enabled(self) -> bool:
@@ -34,8 +35,15 @@ class Config:
         load_dotenv()
         keywords = cls._load_keywords(ROOT / "config" / "keywords.yml")
         sources = cls._load_sources(ROOT / "config" / "sources.yml")
-        recipients_raw = os.getenv("EMAIL_RECIPIENTS", "")
-        recipients = [r.strip() for r in recipients_raw.split(",") if r.strip()]
+
+        def _parse(env_var: str) -> list[str]:
+            return [r.strip() for r in os.getenv(env_var, "").split(",") if r.strip()]
+
+        email_recipients = _parse("EMAIL_RECIPIENTS")
+        # NEWSLETTER_RECIPIENTS : liste prod pour le cron quotidien.
+        # Si non défini, repli sur EMAIL_RECIPIENTS.
+        newsletter_recipients = _parse("NEWSLETTER_RECIPIENTS") or email_recipients
+
         return cls(
             keywords=keywords,
             sources=sources,
@@ -43,7 +51,8 @@ class Config:
             min_score=int(os.getenv("MIN_SCORE", 1)),
             email_sender=os.getenv("EMAIL_SENDER", ""),
             email_password=os.getenv("EMAIL_PASSWORD", ""),
-            email_recipients=recipients,
+            email_recipients=email_recipients,
+            newsletter_recipients=newsletter_recipients,
         )
 
     @staticmethod

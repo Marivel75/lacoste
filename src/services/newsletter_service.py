@@ -1,7 +1,10 @@
-"""Envoi de la newsletter hebdomadaire depuis la base de données.
+"""Envoi de la newsletter depuis la base de données.
 
-Charge les articles d'une semaine ISO (ex: '2026-W21'), les convertit en DTOs
-pipeline, recalcule le nuage de mots, puis délègue l'envoi au Mailer SMTP.
+Deux modes :
+- Quotidien (limit=N) : top N articles jamais envoyés, triés par score desc.
+  Les IDs envoyés sont tracés dans newsletter_logs.article_ids pour éviter
+  tout doublon lors des envois suivants.
+- Hebdomadaire (week=X) : tous les articles d'une semaine ISO donnée.
 """
 
 import logging
@@ -21,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_articles_for_week(db: Session, week: str) -> list[PipelineArticle]:
-    """Retourne les articles d'une semaine depuis la DB, triés par score desc."""
+    """Retourne les articles d'une semaine ISO depuis la DB, triés par score desc."""
     rows = (
         db.query(ArticleModel)
         .filter(ArticleModel.collection_week == week)
@@ -31,15 +34,35 @@ def get_articles_for_week(db: Session, week: str) -> list[PipelineArticle]:
     return [_to_dto(row) for row in rows]
 
 
+def get_unsent_articles(db: Session, limit: int = 10) -> list[PipelineArticle]:
+    """Retourne les N articles les plus pertinents jamais envoyés dans une newsletter."""
+    sent_logs = (
+        db.query(NewsletterLog.article_ids)
+        .filter(NewsletterLog.status == "sent")
+        .all()
+    )
+    sent_ids: set[int] = {aid for (ids,) in sent_logs for aid in (ids or [])}
+
+    query = db.query(ArticleModel).order_by(ArticleModel.score.desc())
+    if sent_ids:
+        query = query.filter(ArticleModel.id.notin_(sent_ids))
+
+    return [_to_dto(row) for row in query.limit(limit).all()]
+
+
 def send_newsletter(
     week: str | None = None,
     extra_recipients: list[str] | None = None,
+    limit: int | None = None,
+    prod: bool = False,
 ) -> dict:
-    """Envoie la newsletter pour la semaine donnée (courante par défaut).
+    """Envoie la newsletter.
 
     Args:
-        week: semaine ISO cible, ex. '2026-W21' (courante si None)
-        extra_recipients: destinataires supplémentaires ajoutés aux EMAIL_RECIPIENTS du .env
+        week:  semaine ISO cible (mode hebdo). Ignoré si limit est fourni.
+        extra_recipients: destinataires supplémentaires (s'ajoutent au .env).
+        limit: mode quotidien — envoie les N articles les plus pertinents
+               jamais encore envoyés.
 
     Returns:
         {"week": str, "articles_sent": int, "sent": bool, "recipients": list[str]}
@@ -47,24 +70,36 @@ def send_newsletter(
     config = Config.load()
     db = SessionLocal()
     try:
-        target_week = week or current_week()
-        articles = get_articles_for_week(db, target_week)
+        if limit is not None:
+            articles_rows = _load_unsent_rows(db, limit)
+            article_ids = [r.id for r in articles_rows]
+            articles = [_to_dto(r) for r in articles_rows]
+            label = current_week()
+        else:
+            target_week = week or current_week()
+            rows = (
+                db.query(ArticleModel)
+                .filter(ArticleModel.collection_week == target_week)
+                .order_by(ArticleModel.score.desc())
+                .all()
+            )
+            article_ids = [r.id for r in rows]
+            articles = [_to_dto(r) for r in rows]
+            label = target_week
 
         if not articles:
-            logger.warning("Newsletter %s — aucun article en base.", target_week)
-            return {"week": target_week, "articles_sent": 0, "sent": False, "recipients": []}
+            logger.warning("Newsletter %s — aucun article à envoyer.", label)
+            return {"week": label, "articles_sent": 0, "sent": False, "recipients": []}
 
-        # Fusionne les destinataires de base + extra, sans doublons, ordre conservé
-        all_recipients = list(dict.fromkeys(
-            config.email_recipients + (extra_recipients or [])
-        ))
+        base = config.newsletter_recipients if prod else config.email_recipients
+        all_recipients = list(dict.fromkeys(base + (extra_recipients or [])))
 
         if not config.email_sender or not config.email_password or not all_recipients:
             logger.warning(
                 "Newsletter %s — %d articles trouvés mais email non configuré.",
-                target_week, len(articles),
+                label, len(articles),
             )
-            return {"week": target_week, "articles_sent": len(articles), "sent": False, "recipients": []}
+            return {"week": label, "articles_sent": len(articles), "sent": False, "recipients": []}
 
         all_texts = [f"{a.title} {a.summary}" for a in articles]
         word_freq = count_term_frequencies(all_texts, top_n=30)
@@ -73,31 +108,46 @@ def send_newsletter(
         try:
             mailer.send(articles, lookback_days=config.lookback_days, word_freq=word_freq)
         except Exception as exc:
-            _log_send(db, target_week, all_recipients, len(articles), "error", str(exc))
+            _log_send(db, label, all_recipients, len(articles), "error", str(exc), article_ids)
             raise
 
-        _log_send(db, target_week, all_recipients, len(articles), "sent")
+        _log_send(db, label, all_recipients, len(articles), "sent", article_ids=article_ids)
         logger.info(
             "Newsletter %s envoyée à %d destinataire(s) — %d articles.",
-            target_week, len(all_recipients), len(articles),
+            label, len(all_recipients), len(articles),
         )
-        return {"week": target_week, "articles_sent": len(articles), "sent": True, "recipients": all_recipients}
+        return {"week": label, "articles_sent": len(articles), "sent": True, "recipients": all_recipients}
     finally:
         db.close()
 
 
+def _load_unsent_rows(db: Session, limit: int) -> list[ArticleModel]:
+    sent_logs = (
+        db.query(NewsletterLog.article_ids)
+        .filter(NewsletterLog.status == "sent")
+        .all()
+    )
+    sent_ids: set[int] = {aid for (ids,) in sent_logs for aid in (ids or [])}
+    query = db.query(ArticleModel).order_by(ArticleModel.score.desc())
+    if sent_ids:
+        query = query.filter(ArticleModel.id.notin_(sent_ids))
+    return query.limit(limit).all()
+
+
 def _log_send(
-    db,
+    db: Session,
     week: str,
     recipients: list[str],
     articles_count: int,
     status: str,
     error_message: str | None = None,
+    article_ids: list[int] | None = None,
 ) -> None:
     entry = NewsletterLog(
         week=week,
         recipients=recipients,
         articles_count=articles_count,
+        article_ids=article_ids or [],
         status=status,
         error_message=error_message,
     )

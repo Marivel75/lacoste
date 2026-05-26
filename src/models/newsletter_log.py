@@ -25,6 +25,7 @@ class NewsletterLog(Base):
     )
     recipients: Mapped[list] = mapped_column(JSON, default=list)
     articles_count: Mapped[int] = mapped_column(Integer, default=0)
+    article_ids: Mapped[list] = mapped_column(JSON, default=list)
     status: Mapped[str] = mapped_column(String, nullable=False)  # sent | error
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 

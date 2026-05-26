@@ -203,13 +203,16 @@ class TestNewsletter:
             week="2026-W22",
             recipients=["mikael@example.com"],
             articles_count=10,
+            article_ids=[1, 2, 3],
             status="sent",
         ))
         db.commit()
         db.close()
         r = client.get("/newsletter/logs")
         assert len(r.json()) == 1
-        assert r.json()[0]["status"] == "sent"
+        entry = r.json()[0]
+        assert entry["status"] == "sent"
+        assert entry["article_ids"] == [1, 2, 3]
 
     def test_send_no_articles(self):
         with patch("api.routers.newsletter.send_newsletter") as mock_send:
@@ -233,5 +236,18 @@ class TestNewsletter:
         assert r.status_code == 200
         assert "emma@example.com" in r.json()["recipients"]
         mock_send.assert_called_once_with(
-            "2026-W22", extra_recipients=["emma@example.com"]
+            "2026-W22", extra_recipients=["emma@example.com"], limit=None
+        )
+
+    def test_send_daily_mode(self):
+        with patch("api.routers.newsletter.send_newsletter") as mock_send:
+            mock_send.return_value = {
+                "week": "2026-W22", "articles_sent": 5, "sent": True,
+                "recipients": ["mikael@example.com"],
+            }
+            r = client.post("/newsletter/send", json={"limit": 5})
+        assert r.status_code == 200
+        assert r.json()["articles_sent"] == 5
+        mock_send.assert_called_once_with(
+            None, extra_recipients=None, limit=5
         )
