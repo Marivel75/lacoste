@@ -1,4 +1,9 @@
-from src.nlp import analyse_sentiment, count_term_frequencies, detect_topics, extract_keywords
+from src.pipeline.nlp import (
+    analyse_sentiment,
+    count_term_frequencies,
+    detect_topics,
+    extract_keywords,
+)
 
 
 class TestDetectTopics:

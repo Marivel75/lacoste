@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from src.filter import KeywordFilter
+from src.pipeline.filter import KeywordFilter
 from tests.conftest import make_article
 
 KEYWORDS = ["dpe", "rénovation énergétique", "maprimerénov", "passoire thermique"]

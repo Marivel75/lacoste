@@ -30,6 +30,18 @@ _FR_STOPWORDS: frozenset[str] = frozenset([
     "beaucoup", "trop", "tant", "tel", "telle", "tels", "telles",
     "lors", "an", "ans", "point", "liés", "lié", "peut", "va",
     "ont", "été", "fait", "faut", "dit", "mis", "via",
+    # mots génériques non-topiques fréquents dans les titres
+    "comprendre", "mieux", "découvrir", "savoir", "tout", "guide",
+    "nouveau", "nouvelle", "nouveaux", "nouvelles",
+    # mots de durée/fréquence sans valeur sémantique dans ce corpus
+    "minutes", "heures", "jours", "semaines", "mois", "chrono",
+    "quinze", "dix", "vingt", "trente",
+    # termes juridiques génériques (noms de cabinets, recours procéduraux)
+    "avocats", "avocat", "cabinet", "recours", "juridique",
+    # noms d'organisations génériques (ANAH = "agence nationale de l'habitat")
+    "agence", "nationale", "national",
+    # noms de publications (Le Moniteur du BTP)
+    "moniteur",
 ])
 
 # ---------------------------------------------------------------------------
@@ -118,6 +130,7 @@ def _clean(text: str) -> str:
     text = text.lower()
     text = re.sub(r"https?://\S+", " ", text)
     text = text.translate(str.maketrans("", "", string.punctuation))
+    text = re.sub(r"\b\d+\b", " ", text)   # supprime années et chiffres isolés (ex : 2026)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
@@ -239,9 +252,9 @@ def count_term_frequencies(texts: list[str], top_n: int = 30) -> dict[str, int]:
     if not cleaned:
         return {}
     vectorizer = CountVectorizer(
-        max_features=top_n,
+        max_features=top_n * 2,   # pool élargi avant dédoublonnage des unigrams
         stop_words=list(_FR_STOPWORDS),
-        min_df=2,
+        min_df=3,
         ngram_range=(1, 2),
     )
     try:
@@ -250,9 +263,20 @@ def count_term_frequencies(texts: list[str], top_n: int = 30) -> dict[str, int]:
         return {}
     feature_names: list[str] = vectorizer.get_feature_names_out().tolist()
     totals = matrix.toarray().sum(axis=0)
-    return dict(
+    freq = dict(
         sorted(zip(feature_names, totals.tolist()), key=lambda kv: kv[1], reverse=True)
     )
+    freq = _drop_subsumed_unigrams(freq)
+    return dict(list(freq.items())[:top_n])
+
+
+def _drop_subsumed_unigrams(freq: dict[str, int]) -> dict[str, int]:
+    """Supprime les unigrams dont le mot est déjà contenu dans un bigram du même résultat.
+
+    Ex : "rénovation" et "énergétique" sont supprimés si "rénovation énergétique" est présent.
+    """
+    bigram_words = {word for term in freq if " " in term for word in term.split()}
+    return {term: count for term, count in freq.items() if " " in term or term not in bigram_words}
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,21 @@
 from datetime import datetime, timezone
 
-from src.models import Article
+import pytest
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from src.models.base import Base
+from src.pipeline.models import Article
+
+
+@pytest.fixture
+def db():
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    yield session
+    session.close()
 
 
 def make_article(
