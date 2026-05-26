@@ -136,7 +136,7 @@ class TestGetUnsentArticles:
     def test_excludes_ids_from_multiple_logs(self, db):
         a1 = _db_article(db, score=5, url="https://ex.com/1")
         a2 = _db_article(db, score=4, url="https://ex.com/2")
-        a3 = _db_article(db, score=3, url="https://ex.com/3")
+        _db_article(db, score=3, url="https://ex.com/3")
         _db_log(db, article_ids=[a1.id])
         _db_log(db, article_ids=[a2.id])
         result = get_unsent_articles(db, limit=10)
